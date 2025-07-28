@@ -49,6 +49,13 @@ header h1 {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 20px;
 }
+.slide-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
 
 /* Subject Boxes */
 .subject-box {
