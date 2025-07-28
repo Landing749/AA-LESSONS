@@ -1,62 +1,118 @@
-body {
+/* === GLOBAL BASE === */
+* {
+  box-sizing: border-box;
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #f8f9fa;
-  color: #222;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  color: #333;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* === HEADER === */
 header {
+  background-color: #fff;
   text-align: center;
-  padding: 1rem;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1em;
+  border-bottom: 2px solid #ddd;
 }
 
-.logo {
-  width: 80px;
-  height: auto;
+header img {
+  height: 60px;
 }
 
-h1 {
-  margin: 0.5rem 0;
-  font-size: 2rem;
-  letter-spacing: 2px;
-  color: #004080;
+header h1 {
+  margin: 0.3em 0 0 0;
+  font-size: 1.5em;
+  color: #222;
 }
 
-.subject-grid {
+/* === SUBJECT BLOCKS ON MAIN PAGE === */
+.subjects-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  padding: 2rem;
+  gap: 1em;
+  padding: 2em;
+  max-width: 1000px;
+  margin: auto;
 }
 
-.subject-card {
-  display: block;
-  background: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 2rem 1rem;
+.subject-block {
+  background: #fff;
+  padding: 1.5em;
   text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   text-decoration: none;
-  font-weight: bold;
-  color: #004080;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  transition: transform 0.2s ease, background 0.3s ease;
+  color: #333;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.subject-card:hover {
-  background: #e0f0ff;
+.subject-block:hover {
   transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-footer {
+.subject-block h2 {
+  margin-bottom: 0.5em;
+  font-size: 1.1em;
+}
+
+/* === SUBJECT PAGE SLIDE VIEWER === */
+.topic-title {
   text-align: center;
-  padding: 1rem;
-  font-size: 0.9rem;
-  background: #f0f0f0;
+  margin: 1em auto;
+  font-size: 1.3em;
+  font-weight: bold;
+}
+
+.slide-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1em;
+}
+
+iframe {
+  width: 100%;
+  height: 480px;
+  border: none;
+}
+
+/* === FOOTER === */
+footer {
   margin-top: auto;
+  background: #222;
+  color: #fff;
+  text-align: center;
+  padding: 1em;
+  font-size: 0.9em;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .subject-block {
+    padding: 1em;
+  }
+
+  .subject-block h2 {
+    font-size: 1em;
+  }
+
+  header h1 {
+    font-size: 1.3em;
+  }
+
+  .topic-title {
+    font-size: 1.1em;
+  }
+
+  iframe {
+    height: 300px;
+  }
 }
