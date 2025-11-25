@@ -1,31 +1,1777 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Academic Acez</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
-</head>
-<body>
-  <header>
-    <img src="assets/img/logo.png" alt="Logo" class="logo" />
-    <h1>ACADEMIC ACEZ</h1>
-  </header>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClassHub Resource Center</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script><!-- Firebase Auth Only (no Realtime DB) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
 
-  <main class="subject-container">
-    <div class="subject-box" onclick="location.href='general-science.html'">General Science</div>
-    <div class="subject-box" onclick="location.href='environmental-science.html'">Environmental Science</div>
-    <div class="subject-box" onclick="location.href='math.html'">Mathematics</div>
-    <div class="subject-box" onclick="location.href='english.html'">English</div>
-    <div class="subject-box" onclick="location.href='filipino.html'">Filipino</div>
-    <div class="subject-box" onclick="location.href='araling-panlipunan.html'">Araling Panlipunan</div>
-    <div class="subject-box" onclick="location.href='esp.html'">Edukasyon sa Pagpapakatao</div>
-    <div class="subject-box" onclick="location.href='tle.html'">TLE</div>
-    <div class="subject-box" onclick="location.href='mapeh.html'">MAPEH</div>
-  </main>
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
 
-  <footer>
-    <p>Made by: ATStudios AA™</p>
-  </footer>
-</body>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-backdrop {
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    .loading-spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .pulse-dot {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .upload-area {
+      border: 2px dashed currentColor;
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .upload-area:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+      border-style: solid;
+    }
+
+    .upload-progress {
+      height: 4px;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .upload-progress-bar {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .toast {
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .ppt-viewer-iframe {
+      width: 100%;
+      min-height: 650px;
+      border: none;
+      border-radius: 12px;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="w-full min-h-full">
+  <div id="app" class="w-full min-h-full"></div>
+  <script>
+    // Firebase Configuration (Auth only)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDcqcitLdyRytuUQTjJTmWgupL69OYFFOM",
+      authDomain: "rtdb-supabase.firebaseapp.com",
+      projectId: "rtdb-supabase",
+      storageBucket: "rtdb-supabase.firebasestorage.app",
+      messagingSenderId: "942223024342",
+      appId: "1:942223024342:web:98c97e0d2d7c6299ab2977"
+    };
+
+    // Cloudinary Configuration
+    const CLOUDINARY_CLOUD_NAME = "damr6r9op";
+    const CLOUDINARY_UPLOAD_PRESET = "org-resources";
+    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`;
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    // Configuration object
+    const defaultConfig = {
+      background_color: "#f8fafc",
+      primary_color: "#3b82f6",
+      secondary_color: "#ffffff",
+      text_color: "#1e293b",
+      accent_color: "#10b981",
+      app_title: "ClassHub Resource Center",
+      welcome_message: "Welcome to your learning hub",
+      student_upload_label: "Upload Notes",
+      teacher_upload_label: "Upload Presentation"
+    };
+
+    // Global state
+    let currentUser = null;
+    let currentView = 'auth';
+    let currentTab = 'notes';
+    let allResources = [];
+    let filteredResources = [];
+    let filters = {
+      search: '',
+      subject: 'all',
+      gradeLevel: 'all',
+      fileType: 'all'
+    };
+    let currentViewerResource = null;
+    
+    // AA² Membership tier codes
+    const MEMBER_CODES = {
+      member: 'AA^2 Made by Director',
+      officer: 'Thranduil@77',
+      director: 'Athanmeir@1'
+    };
+    
+    const TIER_LEVELS = {
+      none: 0,
+      member: 1,
+      officer: 2,
+      director: 3
+    };
+
+    const subjects = ['Mathematics', 'Science', 'English', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'Art'];
+    const gradeLevels = ['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'];
+
+    // Data SDK Handler
+    const dataHandler = {
+      onDataChanged(data) {
+        allResources = data.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+        applyFilters();
+        
+        if (currentView === 'dashboard') {
+          refreshCurrentTab();
+        }
+      }
+    };
+
+    function refreshCurrentTab() {
+      const tabContent = document.getElementById('tab-content');
+      if (tabContent) {
+        renderTabContent(currentTab);
+      }
+    }
+
+    // Initialize SDKs and app
+    async function initializeApp() {
+      const dataResult = await window.dataSdk.init(dataHandler);
+      if (!dataResult.isOk) {
+        showToast('Failed to initialize app', 'error');
+        return;
+      }
+
+      await window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (config) => {
+          document.body.style.backgroundColor = config.background_color || defaultConfig.background_color;
+          renderCurrentView();
+        },
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.primary_color || defaultConfig.primary_color,
+              set: (value) => {
+                config.primary_color = value;
+                window.elementSdk.setConfig({ primary_color: value });
+              }
+            },
+            {
+              get: () => config.secondary_color || defaultConfig.secondary_color,
+              set: (value) => {
+                config.secondary_color = value;
+                window.elementSdk.setConfig({ secondary_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.accent_color || defaultConfig.accent_color,
+              set: (value) => {
+                config.accent_color = value;
+                window.elementSdk.setConfig({ accent_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['app_title', config.app_title || defaultConfig.app_title],
+          ['welcome_message', config.welcome_message || defaultConfig.welcome_message],
+          ['student_upload_label', config.student_upload_label || defaultConfig.student_upload_label],
+          ['teacher_upload_label', config.teacher_upload_label || defaultConfig.teacher_upload_label]
+        ])
+      });
+
+      const config = window.elementSdk.config;
+      document.body.style.backgroundColor = config.background_color || defaultConfig.background_color;
+
+      auth.onAuthStateChanged(handleAuthStateChange);
+    }
+
+    function handleAuthStateChange(user) {
+      if (user) {
+        const membershipTier = localStorage.getItem(`tier_${user.uid}`) || 'none';
+        currentUser = {
+          uid: user.uid,
+          name: user.displayName || user.email.split('@')[0],
+          email: user.email,
+          photoURL: user.photoURL,
+          role: localStorage.getItem('user_role') || 'student',
+          membershipTier: membershipTier,
+          isMember: TIER_LEVELS[membershipTier] >= TIER_LEVELS.member,
+          isOfficer: TIER_LEVELS[membershipTier] >= TIER_LEVELS.officer,
+          isDirector: TIER_LEVELS[membershipTier] >= TIER_LEVELS.director
+        };
+        
+        localStorage.setItem('lastLoginEmail', user.email);
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        if (currentView === 'auth') {
+          currentView = 'dashboard';
+          renderCurrentView();
+        }
+      } else {
+        localStorage.removeItem('isLoggedIn');
+        currentUser = null;
+        currentView = 'auth';
+        renderCurrentView();
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const config = window.elementSdk.config;
+      const toastColor = type === 'success' ? (config.accent_color || defaultConfig.accent_color) : '#ef4444';
+      const existingToast = document.getElementById('toast-container');
+      if (existingToast) {
+        existingToast.remove();
+      }
+
+      const toast = document.createElement('div');
+      toast.id = 'toast-container';
+      toast.className = 'fixed top-4 right-4 z-50 toast';
+      toast.innerHTML = `
+        <div class="px-6 py-4 rounded-lg shadow-lg text-white" style="background-color: ${toastColor};">
+          <p class="font-medium">${message}</p>
+        </div>
+      `;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Auth Page
+    function renderAuthPage() {
+      const config = window.elementSdk.config;
+      const app = document.getElementById('app');
+      
+      app.innerHTML = `
+        <div class="w-full min-h-full flex items-center justify-center p-6" style="background-color: ${config.background_color || defaultConfig.background_color};">
+          <div class="w-full max-w-md fade-in">
+            <div class="rounded-2xl shadow-xl p-8" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style="background-color: ${config.primary_color || defaultConfig.primary_color};">
+                  <span class="text-3xl">📚</span>
+                </div>
+                <h1 class="text-3xl font-bold mb-2" style="color: ${config.text_color || defaultConfig.text_color};">
+                  ${config.app_title || defaultConfig.app_title}
+                </h1>
+                <p class="text-sm opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                  ${config.welcome_message || defaultConfig.welcome_message}
+                </p>
+              </div>
+
+              <div id="auth-tabs" class="flex gap-2 mb-6">
+                <button id="tab-signin" class="flex-1 px-4 py-2 rounded-lg font-medium transition-all" 
+                  style="background-color: ${config.primary_color || defaultConfig.primary_color}; color: white;">
+                  Sign In
+                </button>
+                <button id="tab-signup" class="flex-1 px-4 py-2 rounded-lg font-medium transition-all"
+                  style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                  Sign Up
+                </button>
+              </div>
+
+              <div id="auth-form">
+                <div id="email-auth" class="mb-6">
+                  <div class="mb-4" id="name-field" style="display: none;">
+                    <label class="block text-sm font-medium mb-2" style="color: ${config.text_color || defaultConfig.text_color};">Full Name</label>
+                    <input type="text" id="name-input" placeholder="Enter your name" 
+                      class="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:border-opacity-100 transition-all"
+                      style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  </div>
+
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2" style="color: ${config.text_color || defaultConfig.text_color};">Email</label>
+                    <input type="email" id="email-input" placeholder="your.email@school.edu" 
+                      class="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:border-opacity-100 transition-all"
+                      style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  </div>
+
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2" style="color: ${config.text_color || defaultConfig.text_color};">Password</label>
+                    <input type="password" id="password-input" placeholder="Enter password (min 6 characters)" 
+                      class="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:border-opacity-100 transition-all"
+                      style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  </div>
+
+                  <div class="mb-6" id="role-field" style="display: none;">
+                    <label class="block text-sm font-medium mb-2" style="color: ${config.text_color || defaultConfig.text_color};">I am a:</label>
+                    <div class="flex gap-4">
+                      <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="role" value="student" class="hidden peer" checked>
+                        <div class="px-4 py-3 rounded-lg border-2 text-center transition-all peer-checked:border-opacity-100" 
+                          style="border-color: ${config.primary_color || defaultConfig.primary_color}; border-opacity: 0.3; color: ${config.text_color || defaultConfig.text_color};">
+                          <span class="text-2xl block mb-1">🎓</span>
+                          <span class="text-sm font-medium">Student</span>
+                        </div>
+                      </label>
+                      <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="role" value="teacher" class="hidden peer">
+                        <div class="px-4 py-3 rounded-lg border-2 text-center transition-all peer-checked:border-opacity-100" 
+                          style="border-color: ${config.primary_color || defaultConfig.primary_color}; border-opacity: 0.3; color: ${config.text_color || defaultConfig.text_color};">
+                          <span class="text-2xl block mb-1">👨‍🏫</span>
+                          <span class="text-sm font-medium">Teacher</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <button id="email-auth-btn" class="w-full py-3 rounded-lg font-semibold text-white transition-all hover:shadow-lg flex items-center justify-center"
+                    style="background-color: ${config.primary_color || defaultConfig.primary_color};">
+                    <span id="auth-btn-text">Sign In</span>
+                    <div id="auth-spinner" class="loading-spinner hidden ml-2"></div>
+                  </button>
+                </div>
+
+                <div class="relative mb-6">
+                  <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t" style="border-color: rgba(0, 0, 0, 0.1);"></div>
+                  </div>
+                  <div class="relative flex justify-center text-sm">
+                    <span class="px-4 text-sm opacity-70" style="background-color: ${config.secondary_color || defaultConfig.secondary_color}; color: ${config.text_color || defaultConfig.text_color};">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <button id="google-signin-btn" class="w-full py-3 rounded-lg font-semibold border-2 transition-all hover:shadow-lg flex items-center justify-center gap-3"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M19.8 10.2273C19.8 9.51818 19.7364 8.83636 19.6182 8.18182H10.2V12.05H15.6109C15.3727 13.3 14.6582 14.3591 13.5864 15.0682V17.5773H16.8182C18.7091 15.8364 19.8 13.2727 19.8 10.2273Z" fill="#4285F4"/>
+                    <path d="M10.2 20C12.9 20 15.1636 19.1045 16.8182 17.5773L13.5864 15.0682C12.6864 15.6682 11.5409 16.0227 10.2 16.0227C7.59545 16.0227 5.38182 14.2636 4.58636 11.9H1.25455V14.4909C2.90455 17.7591 6.31364 20 10.2 20Z" fill="#34A853"/>
+                    <path d="M4.58636 11.9C4.38636 11.3 4.27273 10.6591 4.27273 10C4.27273 9.34091 4.38636 8.7 4.58636 8.1V5.50909H1.25455C0.572727 6.85909 0.2 8.38636 0.2 10C0.2 11.6136 0.572727 13.1409 1.25455 14.4909L4.58636 11.9Z" fill="#FBBC04"/>
+                    <path d="M10.2 3.97727C11.6727 3.97727 12.9864 4.48182 14.0227 5.47273L16.8909 2.60455C15.1591 0.986364 12.8955 0 10.2 0C6.31364 0 2.90455 2.24091 1.25455 5.50909L4.58636 8.1C5.38182 5.73636 7.59545 3.97727 10.2 3.97727Z" fill="#EA4335"/>
+                  </svg>
+                  <span>Sign in with Google</span>
+                </button>
+
+                <div class="relative my-6">
+                  <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t" style="border-color: rgba(0, 0, 0, 0.1);"></div>
+                  </div>
+                  <div class="relative flex justify-center text-sm">
+                    <span class="px-4 text-sm opacity-70" style="background-color: ${config.secondary_color || defaultConfig.secondary_color}; color: ${config.text_color || defaultConfig.text_color};">
+                      AA² Member?
+                    </span>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-lg border-2" style="border-color: ${config.accent_color || defaultConfig.accent_color}; background-color: ${config.accent_color || defaultConfig.accent_color}10;">
+                  <div class="flex items-center gap-2 mb-3">
+                    <span class="text-xl">🔐</span>
+                    <p class="font-semibold text-sm" style="color: ${config.text_color || defaultConfig.text_color};">
+                      Member Access Code
+                    </p>
+                  </div>
+                  <input type="text" id="member-code-input" placeholder="Enter your AA² code" 
+                    class="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:border-opacity-100 transition-all mb-2"
+                    style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  <p class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                    Note: Only for members of AA²
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      let isSignUpMode = false;
+
+      document.getElementById('tab-signin').addEventListener('click', () => {
+        isSignUpMode = false;
+        updateAuthForm();
+      });
+
+      document.getElementById('tab-signup').addEventListener('click', () => {
+        isSignUpMode = true;
+        updateAuthForm();
+      });
+
+      function updateAuthForm() {
+        const config = window.elementSdk.config;
+        const nameField = document.getElementById('name-field');
+        const roleField = document.getElementById('role-field');
+        const authBtnText = document.getElementById('auth-btn-text');
+        const tabSignin = document.getElementById('tab-signin');
+        const tabSignup = document.getElementById('tab-signup');
+
+        if (isSignUpMode) {
+          nameField.style.display = 'block';
+          roleField.style.display = 'block';
+          authBtnText.textContent = 'Sign Up';
+          tabSignin.style.backgroundColor = `${config.primary_color || defaultConfig.primary_color}20`;
+          tabSignin.style.color = config.primary_color || defaultConfig.primary_color;
+          tabSignup.style.backgroundColor = config.primary_color || defaultConfig.primary_color;
+          tabSignup.style.color = 'white';
+        } else {
+          nameField.style.display = 'none';
+          roleField.style.display = 'none';
+          authBtnText.textContent = 'Sign In';
+          tabSignin.style.backgroundColor = config.primary_color || defaultConfig.primary_color;
+          tabSignin.style.color = 'white';
+          tabSignup.style.backgroundColor = `${config.primary_color || defaultConfig.primary_color}20`;
+          tabSignup.style.color = config.primary_color || defaultConfig.primary_color;
+        }
+      }
+
+      document.getElementById('email-auth-btn').addEventListener('click', handleEmailAuth);
+      document.getElementById('password-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleEmailAuth();
+      });
+
+      async function handleEmailAuth() {
+        const email = document.getElementById('email-input').value.trim();
+        const password = document.getElementById('password-input').value;
+        const memberCode = document.getElementById('member-code-input').value.trim();
+        const authBtn = document.getElementById('email-auth-btn');
+        const authBtnText = document.getElementById('auth-btn-text');
+        const authSpinner = document.getElementById('auth-spinner');
+
+        if (!email || !password) {
+          showToast('Please enter email and password', 'error');
+          return;
+        }
+
+        if (password.length < 6) {
+          showToast('Password must be at least 6 characters', 'error');
+          return;
+        }
+
+        authBtn.disabled = true;
+        authBtnText.classList.add('hidden');
+        authSpinner.classList.remove('hidden');
+
+        try {
+          if (isSignUpMode) {
+            const name = document.getElementById('name-input').value.trim();
+            const role = document.querySelector('input[name="role"]:checked').value;
+
+            if (!name) {
+              showToast('Please enter your name', 'error');
+              authBtn.disabled = false;
+              authBtnText.classList.remove('hidden');
+              authSpinner.classList.add('hidden');
+              return;
+            }
+
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            await userCredential.user.updateProfile({ displayName: name });
+            localStorage.setItem('user_role', role);
+            
+            let tierSet = false;
+            if (memberCode === MEMBER_CODES.director) {
+              localStorage.setItem(`tier_${userCredential.user.uid}`, 'director');
+              showToast('👑 Welcome Director!');
+              tierSet = true;
+            } else if (memberCode === MEMBER_CODES.officer) {
+              localStorage.setItem(`tier_${userCredential.user.uid}`, 'officer');
+              showToast('⭐ Welcome Officer!');
+              tierSet = true;
+            } else if (memberCode === MEMBER_CODES.member) {
+              localStorage.setItem(`tier_${userCredential.user.uid}`, 'member');
+              showToast('✨ Welcome AA² Member!');
+              tierSet = true;
+            }
+            
+            if (!tierSet) {
+              showToast('Account created successfully!');
+            }
+          } else {
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            
+            let tierUpdated = false;
+            const currentTier = localStorage.getItem(`tier_${userCredential.user.uid}`) || 'none';
+            
+            if (memberCode === MEMBER_CODES.director && TIER_LEVELS[currentTier] < TIER_LEVELS.director) {
+              localStorage.setItem(`tier_${userCredential.user.uid}`, 'director');
+              showToast('👑 Welcome back Director!');
+              tierUpdated = true;
+            } else if (memberCode === MEMBER_CODES.officer && TIER_LEVELS[currentTier] < TIER_LEVELS.officer) {
+              localStorage.setItem(`tier_${userCredential.user.uid}`, 'officer');
+              showToast('⭐ Welcome back Officer!');
+              tierUpdated = true;
+            } else if (memberCode === MEMBER_CODES.member && TIER_LEVELS[currentTier] < TIER_LEVELS.member) {
+              localStorage.setItem(`tier_${userCredential.user.uid}`, 'member');
+              showToast('✨ Welcome back AA² Member!');
+              tierUpdated = true;
+            }
+            
+            if (!tierUpdated) {
+              showToast('Signed in successfully!');
+            }
+          }
+        } catch (error) {
+          console.error('Auth error:', error);
+          showToast(error.message || 'Authentication failed', 'error');
+          authBtn.disabled = false;
+          authBtnText.classList.remove('hidden');
+          authSpinner.classList.add('hidden');
+        }
+      }
+
+      document.getElementById('google-signin-btn').addEventListener('click', async () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+          await auth.signInWithPopup(provider);
+          if (!localStorage.getItem('user_role')) {
+            localStorage.setItem('user_role', 'student');
+          }
+          showToast('Signed in with Google!');
+        } catch (error) {
+          console.error('Google sign in error:', error);
+          showToast(error.message || 'Google sign in failed', 'error');
+        }
+      });
+    }
+
+    // Dashboard and other functions continue...
+    // (Keeping the rest of your dashboard code but removing ALL Firebase Realtime Database references)
+
+    function renderCurrentView() {
+      if (currentView === 'auth') {
+        renderAuthPage();
+        return;
+      }
+
+      if (currentView === 'viewer' && currentViewerResource) {
+        renderViewer();
+        return;
+      }
+
+      const config = window.elementSdk.config;
+      const app = document.getElementById('app');
+      const onlineCount = 0; // Removed online tracking
+
+      app.innerHTML = `
+        <div class="w-full min-h-full" style="background-color: ${config.background_color || defaultConfig.background_color};">
+          <header class="shadow-sm" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="flex items-center justify-center w-10 h-10 rounded-full" style="background-color: ${config.primary_color || defaultConfig.primary_color};">
+                    <span class="text-xl">📚</span>
+                  </div>
+                  <div>
+                    <h1 class="text-xl sm:text-2xl font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                      ${config.app_title || defaultConfig.app_title}
+                    </h1>
+                    <div class="flex items-center gap-3 text-xs">
+                      <span class="opacity-50" style="color: ${config.text_color || defaultConfig.text_color};">Made by AA²</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <div class="hidden sm:flex items-center gap-3">
+                    ${currentUser.photoURL ? `
+                      <img src="${currentUser.photoURL}" alt="${currentUser.name}" class="w-10 h-10 rounded-full">
+                    ` : `
+                      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background-color: ${config.primary_color || defaultConfig.primary_color};">
+                        <span class="text-white font-bold">${currentUser.name[0].toUpperCase()}</span>
+                      </div>
+                    `}
+                    <div class="text-right">
+                      <p class="text-sm font-medium" style="color: ${config.text_color || defaultConfig.text_color};">${currentUser.name}</p>
+                      <p class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">${currentUser.role === 'teacher' ? '👨‍🏫 Teacher' : '🎓 Student'}</p>
+                    </div>
+                  </div>
+                  <button id="logout-btn" class="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+                    style="background-color: ${config.primary_color || defaultConfig.primary_color}; color: white;">
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+              <div class="flex gap-2 overflow-x-auto pb-2">
+                <button class="nav-tab px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap flex-shrink-0" data-tab="notes"
+                  style="background-color: ${config.primary_color || defaultConfig.primary_color}; color: white;">
+                  📝 Notes
+                </button>
+                <button class="nav-tab px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap flex-shrink-0" data-tab="presentations"
+                  style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                  📊 Presentations
+                </button>
+                ${currentUser.isMember ? `
+                <button class="nav-tab px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap flex-shrink-0" data-tab="member"
+                  style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                  ✨ AA² Member
+                </button>
+                ` : ''}
+                <button class="nav-tab px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap flex-shrink-0" data-tab="settings"
+                  style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                  ⚙️ Settings
+                </button>
+              </div>
+            </div>
+
+            <div id="tab-content"></div>
+          </main>
+        </div>
+
+        <input type="file" id="notes-file-input" accept=".pdf,.docx,.jpg,.jpeg,.png" multiple>
+        <input type="file" id="ppt-file-input" accept=".ppt,.pptx" multiple>
+      `;
+
+      document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+
+      function updateNavTabs() {
+        const config = window.elementSdk.config;
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+          if (tab.dataset.tab === currentTab) {
+            tab.style.backgroundColor = config.primary_color || defaultConfig.primary_color;
+            tab.style.color = 'white';
+          } else {
+            tab.style.backgroundColor = `${config.primary_color || defaultConfig.primary_color}20`;
+            tab.style.color = config.primary_color || defaultConfig.primary_color;
+          }
+        });
+      }
+      
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          currentTab = tab.dataset.tab;
+          updateNavTabs();
+          renderTabContent(currentTab);
+        });
+      });
+
+      renderTabContent(currentTab);
+
+      document.getElementById('notes-file-input')?.addEventListener('change', (e) => showUploadModal(e, 'notes'));
+      document.getElementById('ppt-file-input')?.addEventListener('change', (e) => showUploadModal(e, 'ppt'));
+    }
+
+    function renderTabContent(tab) {
+      const config = window.elementSdk.config;
+      const tabContent = document.getElementById('tab-content');
+      
+      if (tab === 'notes') {
+        const notesResources = filteredResources.filter(r => r.fileType !== 'ppt');
+        
+        tabContent.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            ${renderStatsCards()}
+          </div>
+
+          ${currentUser.role === 'student' || currentUser.isMember ? `
+          <div class="mb-8">
+            <div class="rounded-2xl shadow-lg p-6" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <h2 class="text-xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+                📤 Upload Notes ${currentUser.isMember ? '(AA² Member)' : ''}
+              </h2>
+              <button id="upload-notes-btn" class="w-full upload-area" style="color: ${config.primary_color || defaultConfig.primary_color};">
+                <div class="text-4xl mb-2">📝</div>
+                <p class="font-semibold mb-1">${config.student_upload_label || defaultConfig.student_upload_label}</p>
+                <p class="text-sm opacity-70">PDF, DOCX, JPG, PNG (Max 10MB)</p>
+              </button>
+              <div id="upload-status" class="hidden mt-4">
+                <div class="upload-progress mb-2">
+                  <div id="upload-progress-bar" class="upload-progress-bar" style="width: 0%; background-color: ${config.primary_color || defaultConfig.primary_color};"></div>
+                </div>
+                <p id="upload-text" class="text-sm text-center" style="color: ${config.text_color || defaultConfig.text_color};"></p>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="mb-6">
+            <div class="rounded-2xl shadow-lg p-6" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <input type="text" id="search-input" placeholder="🔍 Search notes..." 
+                  class="px-4 py-3 rounded-lg border-2 focus:outline-none transition-all"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};"
+                  value="${filters.search}">
+                <select id="subject-filter" class="px-4 py-3 rounded-lg border-2 focus:outline-none transition-all"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  <option value="all">All Subjects</option>
+                  ${subjects.map(s => `<option value="${s}" ${filters.subject === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+                <select id="grade-filter" class="px-4 py-3 rounded-lg border-2 focus:outline-none transition-all"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  <option value="all">All Grades</option>
+                  ${gradeLevels.map(g => `<option value="${g}" ${filters.gradeLevel === g ? 'selected' : ''}>${g}</option>`).join('')}
+                </select>
+                <select id="type-filter" class="px-4 py-3 rounded-lg border-2 focus:outline-none transition-all"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  <option value="all">All Types</option>
+                  <option value="pdf" ${filters.fileType === 'pdf' ? 'selected' : ''}>PDF</option>
+                  <option value="doc" ${filters.fileType === 'doc' ? 'selected' : ''}>Document</option>
+                  <option value="image" ${filters.fileType === 'image' ? 'selected' : ''}>Image</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                📝 Notes Library (${notesResources.length})
+              </h2>
+            </div>
+            <div id="resources-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${notesResources.length === 0 ? `
+                <div class="col-span-full text-center py-12">
+                  <div class="text-6xl mb-4">📭</div>
+                  <p class="text-lg font-medium mb-2" style="color: ${config.text_color || defaultConfig.text_color};">No notes found</p>
+                  <p class="text-sm opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                    ${currentUser.role === 'student' ? 'Upload your first notes to get started!' : 'No notes uploaded yet'}
+                  </p>
+                </div>
+              ` : notesResources.map(resource => renderResourceCard(resource)).join('')}
+            </div>
+          </div>
+        `;
+        
+        attachTabEventListeners();
+      } else if (tab === 'presentations') {
+        const pptResources = filteredResources.filter(r => r.fileType === 'ppt');
+        
+        tabContent.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            ${renderStatsCards()}
+          </div>
+
+          ${currentUser.role === 'teacher' || currentUser.isMember ? `
+          <div class="mb-8">
+            <div class="rounded-2xl shadow-lg p-6" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <h2 class="text-xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+                📤 Upload Presentation ${currentUser.isMember ? '(AA² Member)' : ''}
+              </h2>
+              <button id="upload-ppt-btn" class="w-full upload-area" style="color: ${config.primary_color || defaultConfig.primary_color};">
+                <div class="text-4xl mb-2">📊</div>
+                <p class="font-semibold mb-1">${config.teacher_upload_label || defaultConfig.teacher_upload_label}</p>
+                <p class="text-sm opacity-70">PPT, PPTX (Max 10MB)</p>
+              </button>
+              <div id="upload-status" class="hidden mt-4">
+                <div class="upload-progress mb-2">
+                  <div id="upload-progress-bar" class="upload-progress-bar" style="width: 0%; background-color: ${config.primary_color || defaultConfig.primary_color};"></div>
+                </div>
+                <p id="upload-text" class="text-sm text-center" style="color: ${config.text_color || defaultConfig.text_color};"></p>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="mb-6">
+            <div class="rounded-2xl shadow-lg p-6" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <input type="text" id="search-input" placeholder="🔍 Search presentations..." 
+                  class="px-4 py-3 rounded-lg border-2 focus:outline-none transition-all"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};"
+                  value="${filters.search}">
+                <select id="subject-filter" class="px-4 py-3 rounded-lg border-2 focus:outline-none transition-all"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  <option value="all">All Subjects</option>
+                  ${subjects.map(s => `<option value="${s}" ${filters.subject === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+                <select id="grade-filter" class="px-4 py-3 rounded-lg border-2 focus:outline-none transition-all"
+                  style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  <option value="all">All Grades</option>
+                  ${gradeLevels.map(g => `<option value="${g}" ${filters.gradeLevel === g ? 'selected' : ''}>${g}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                📊 Presentations Library (${pptResources.length})
+              </h2>
+            </div>
+            <div id="resources-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${pptResources.length === 0 ? `
+                <div class="col-span-full text-center py-12">
+                  <div class="text-6xl mb-4">📭</div>
+                  <p class="text-lg font-medium mb-2" style="color: ${config.text_color || defaultConfig.text_color};">No presentations found</p>
+                  <p class="text-sm opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                    ${currentUser.role === 'teacher' ? 'Upload your first presentation to get started!' : 'No presentations uploaded yet'}
+                  </p>
+                </div>
+              ` : pptResources.map(resource => renderResourceCard(resource)).join('')}
+            </div>
+          </div>
+        `;
+        
+        attachTabEventListeners();
+      } else if (tab === 'member') {
+        renderMemberTab();
+      } else if (tab === 'settings') {
+        renderSettingsTab();
+      }
+    }
+
+    function attachTabEventListeners() {
+      document.getElementById('upload-notes-btn')?.addEventListener('click', () => document.getElementById('notes-file-input').click());
+      document.getElementById('upload-ppt-btn')?.addEventListener('click', () => document.getElementById('ppt-file-input').click());
+
+      document.getElementById('search-input')?.addEventListener('input', (e) => {
+        filters.search = e.target.value;
+        applyFilters();
+        renderTabContent(currentTab);
+      });
+
+      document.getElementById('subject-filter')?.addEventListener('change', (e) => {
+        filters.subject = e.target.value;
+        applyFilters();
+        renderTabContent(currentTab);
+      });
+
+      document.getElementById('grade-filter')?.addEventListener('change', (e) => {
+        filters.gradeLevel = e.target.value;
+        applyFilters();
+        renderTabContent(currentTab);
+      });
+
+      document.getElementById('type-filter')?.addEventListener('change', (e) => {
+        filters.fileType = e.target.value;
+        applyFilters();
+        renderTabContent(currentTab);
+      });
+
+      filteredResources.forEach(resource => {
+        document.getElementById(`resource-${resource.id}`)?.addEventListener('click', () => openViewer(resource));
+        document.getElementById(`delete-${resource.id}`)?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showDeleteConfirmation(resource);
+        });
+      });
+    }
+
+    function renderMemberTab() {
+      const config = window.elementSdk.config;
+      const tabContent = document.getElementById('tab-content');
+      
+      const myResources = allResources.filter(r => r.uploaderEmail === currentUser.email);
+      const totalUploads = myResources.length;
+      const totalViews = myResources.reduce((sum, r) => sum + (r.viewCount || 0), 0);
+      let points = totalUploads * 10 + totalViews * 2;
+      if (currentUser.isMember) points += totalUploads * 1;
+      
+      tabContent.innerHTML = `
+        <div class="rounded-2xl shadow-lg p-6 border-4" style="background: linear-gradient(135deg, ${config.primary_color || defaultConfig.primary_color}20, ${config.accent_color || defaultConfig.accent_color}20); border-color: ${config.accent_color || defaultConfig.accent_color};">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">✨</div>
+              <div>
+                <h2 class="text-xl font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                  AA² Member Exclusive
+                </h2>
+                <p class="text-sm opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                  Premium Perks Active
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div class="text-center p-4 rounded-lg" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <div class="text-2xl mb-1">🏆</div>
+              <div class="text-2xl font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                ${points}
+              </div>
+              <div class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">Points</div>
+            </div>
+            <div class="text-center p-4 rounded-lg" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <div class="text-2xl mb-1">📤</div>
+              <div class="text-2xl font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                ${totalUploads}
+              </div>
+              <div class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">Uploads</div>
+            </div>
+            <div class="text-center p-4 rounded-lg" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <div class="text-2xl mb-1">👁️</div>
+              <div class="text-2xl font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                ${totalViews}
+              </div>
+              <div class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">Views</div>
+            </div>
+            <div class="text-center p-4 rounded-lg" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+              <div class="text-2xl mb-1">${currentUser.isDirector ? '👑' : currentUser.isOfficer ? '⭐' : '✨'}</div>
+              <div class="text-sm font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                ${currentUser.membershipTier.charAt(0).toUpperCase() + currentUser.membershipTier.slice(1)}
+              </div>
+              <div class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">Tier</div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="font-bold mb-3" style="color: ${config.text_color || defaultConfig.text_color};">⭐ Active Perks</h3>
+            ${renderMemberPerks()}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMemberPerks() {
+      const config = window.elementSdk.config;
+      const perks = [
+        { icon: '📊', title: 'Upload Both Types', desc: 'Upload notes AND presentations', active: true, tier: 'member' },
+        { icon: '🏆', title: 'Points Boost', desc: '+1 point bonus per upload', active: true, tier: 'member' },
+        { icon: '✨', title: 'Member Badge', desc: 'Exclusive AA² badge on profile', active: true, tier: 'member' },
+        { icon: '⚡', title: 'Priority Support', desc: 'Faster help and assistance', active: currentUser.isOfficer, tier: 'officer' },
+        { icon: '🎨', title: 'Custom Profile', desc: 'Enhanced profile styling', active: currentUser.isOfficer, tier: 'officer' },
+        { icon: '👑', title: 'Full Access', desc: 'All platform features unlocked', active: currentUser.isDirector, tier: 'director' }
+      ];
+
+      return perks.map(perk => `
+        <div class="flex items-start gap-4 p-4 rounded-xl ${!perk.active ? 'opacity-50' : ''}" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+          <div class="text-2xl">${perk.icon}</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <h4 class="font-bold text-sm" style="color: ${config.text_color || defaultConfig.text_color};">
+                ${perk.title}
+              </h4>
+              ${perk.active ? `
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold text-white" style="background-color: ${config.accent_color || defaultConfig.accent_color};">
+                  ACTIVE
+                </span>
+              ` : `
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold" style="background-color: rgba(0,0,0,0.1); color: ${config.text_color || defaultConfig.text_color};">
+                  ${perk.tier === 'director' ? '👑' : perk.tier === 'officer' ? '⭐' : '✨'}
+                </span>
+              `}
+            </div>
+            <p class="text-xs opacity-80" style="color: ${config.text_color || defaultConfig.text_color};">
+              ${perk.desc}
+            </p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderSettingsTab() {
+      const config = window.elementSdk.config;
+      const tabContent = document.getElementById('tab-content');
+      
+      tabContent.innerHTML = `
+        <div class="max-w-2xl mx-auto">
+          <div class="rounded-2xl shadow-lg p-6 mb-6" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <h2 class="text-xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+              👤 Profile Information
+            </h2>
+            <div class="space-y-4">
+              <div class="flex items-center gap-4">
+                ${currentUser.photoURL ? `
+                  <img src="${currentUser.photoURL}" alt="${currentUser.name}" class="w-16 h-16 rounded-full">
+                ` : `
+                  <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white" style="background-color: ${config.primary_color || defaultConfig.primary_color};">
+                    ${currentUser.name[0].toUpperCase()}
+                  </div>
+                `}
+                <div class="flex-1">
+                  <p class="font-bold text-lg" style="color: ${config.text_color || defaultConfig.text_color};">
+                    ${currentUser.name}
+                  </p>
+                  <p class="text-sm opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                    ${currentUser.email}
+                  </p>
+                  <p class="text-sm mt-1" style="color: ${config.primary_color || defaultConfig.primary_color};">
+                    ${currentUser.role === 'teacher' ? '👨‍🏫 Teacher' : '🎓 Student'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl shadow-lg p-6 mb-6 border-4" style="background: linear-gradient(135deg, ${config.primary_color || defaultConfig.primary_color}20, ${config.accent_color || defaultConfig.accent_color}20); border-color: ${config.accent_color || defaultConfig.accent_color};">
+            ${currentUser.membershipTier === 'none' ? `
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-3xl">🔐</span>
+              <div>
+                <h3 class="text-lg font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                  Unlock AA² Membership
+                </h3>
+                <p class="text-sm opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                  Enter your exclusive code to access premium features
+                </p>
+              </div>
+            </div>
+            <form id="activate-member-form" class="flex gap-3">
+              <input type="text" id="settings-member-code" placeholder="Enter your AA² code..." 
+                class="flex-1 px-4 py-3 rounded-full border-2 focus:outline-none transition-all"
+                style="border-color: ${config.accent_color || defaultConfig.accent_color}50; color: ${config.text_color || defaultConfig.text_color};">
+              <button type="submit" class="px-6 py-3 rounded-full font-semibold text-white transition-all hover:shadow-lg"
+                style="background-color: ${config.accent_color || defaultConfig.accent_color};">
+                🎯 Activate
+              </button>
+            </form>
+            ` : `
+            <div class="text-center py-4 mb-4">
+              <div class="text-5xl mb-3">${currentUser.isDirector ? '👑' : currentUser.isOfficer ? '⭐' : '✨'}</div>
+              <h3 class="text-xl font-bold mb-2" style="color: ${config.text_color || defaultConfig.text_color};">
+                ${currentUser.isDirector ? 'Director' : currentUser.isOfficer ? 'Officer' : 'Member'} Tier Active
+              </h3>
+              <p class="text-sm opacity-70 mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+                You're enjoying ${currentUser.isDirector ? 'maximum' : 'premium'} benefits!
+              </p>
+              <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-white"
+                style="background-color: ${config.accent_color || defaultConfig.accent_color};">
+                <span>✓</span>
+                <span>${currentUser.membershipTier.charAt(0).toUpperCase() + currentUser.membershipTier.slice(1)} Verified</span>
+              </div>
+            </div>
+            
+            ${!currentUser.isDirector ? `
+            <div class="border-t pt-4" style="border-color: rgba(0, 0, 0, 0.1);">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl">🚀</span>
+                <h4 class="font-bold" style="color: ${config.text_color || defaultConfig.text_color};">
+                  Upgrade Your Tier
+                </h4>
+              </div>
+              <p class="text-sm opacity-70 mb-3" style="color: ${config.text_color || defaultConfig.text_color};">
+                Enter a higher tier code to unlock more features
+              </p>
+              <form id="upgrade-tier-form" class="flex gap-3">
+                <input type="text" id="upgrade-code-input" placeholder="Enter upgrade code..." 
+                  class="flex-1 px-4 py-3 rounded-full border-2 focus:outline-none transition-all"
+                  style="border-color: ${config.accent_color || defaultConfig.accent_color}50; color: ${config.text_color || defaultConfig.text_color};">
+                <button type="submit" class="px-6 py-3 rounded-full font-semibold text-white transition-all hover:shadow-lg"
+                  style="background-color: ${config.accent_color || defaultConfig.accent_color};">
+                  ⬆️ Upgrade
+                </button>
+              </form>
+            </div>
+            ` : ''}
+            `}
+          </div>
+
+          <div class="rounded-2xl shadow-lg p-6" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <h2 class="text-xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+              ℹ️ About ClassHub
+            </h2>
+            <div class="space-y-3 text-sm" style="color: ${config.text_color || defaultConfig.text_color};">
+              <p class="opacity-80">
+                ClassHub is your collaborative learning resource center where students and teachers share educational materials.
+              </p>
+              <div class="pt-3 border-t" style="border-color: rgba(0, 0, 0, 0.1);">
+                <p class="opacity-70">
+                  <strong>Made by AA²</strong> • Director's Edition
+                </p>
+                <p class="opacity-50 text-xs mt-2">
+                  Share knowledge, inspire learning, build community.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('activate-member-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = document.getElementById('settings-member-code').value.trim();
+        
+        if (code === MEMBER_CODES.director) {
+          localStorage.setItem(`tier_${currentUser.uid}`, 'director');
+          currentUser.membershipTier = 'director';
+          currentUser.isMember = true;
+          currentUser.isOfficer = true;
+          currentUser.isDirector = true;
+          showToast('👑 Director Tier Activated!');
+          renderCurrentView();
+        } else if (code === MEMBER_CODES.officer) {
+          localStorage.setItem(`tier_${currentUser.uid}`, 'officer');
+          currentUser.membershipTier = 'officer';
+          currentUser.isMember = true;
+          currentUser.isOfficer = true;
+          currentUser.isDirector = false;
+          showToast('⭐ Officer Tier Activated!');
+          renderCurrentView();
+        } else if (code === MEMBER_CODES.member) {
+          localStorage.setItem(`tier_${currentUser.uid}`, 'member');
+          currentUser.membershipTier = 'member';
+          currentUser.isMember = true;
+          currentUser.isOfficer = false;
+          currentUser.isDirector = false;
+          showToast('✨ Member Tier Activated!');
+          renderCurrentView();
+        } else {
+          showToast('Invalid membership code', 'error');
+        }
+      });
+
+      document.getElementById('upgrade-tier-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = document.getElementById('upgrade-code-input').value.trim();
+        const currentTierLevel = TIER_LEVELS[currentUser.membershipTier];
+        
+        if (code === MEMBER_CODES.director && currentTierLevel < TIER_LEVELS.director) {
+          localStorage.setItem(`tier_${currentUser.uid}`, 'director');
+          currentUser.membershipTier = 'director';
+          currentUser.isDirector = true;
+          currentUser.isOfficer = true;
+          showToast('🎉 Upgraded to Director Tier!');
+          renderCurrentView();
+        } else if (code === MEMBER_CODES.officer && currentTierLevel < TIER_LEVELS.officer) {
+          localStorage.setItem(`tier_${currentUser.uid}`, 'officer');
+          currentUser.membershipTier = 'officer';
+          currentUser.isOfficer = true;
+          showToast('🎉 Upgraded to Officer Tier!');
+          renderCurrentView();
+        } else if (code === MEMBER_CODES.member && currentTierLevel < TIER_LEVELS.member) {
+          localStorage.setItem(`tier_${currentUser.uid}`, 'member');
+          currentUser.membershipTier = 'member';
+          showToast('🎉 Upgraded to Member Tier!');
+          renderCurrentView();
+        } else if (TIER_LEVELS[currentUser.membershipTier] >= TIER_LEVELS.director) {
+          showToast('You already have the highest tier!', 'error');
+        } else {
+          showToast('Invalid upgrade code or already at this tier', 'error');
+        }
+      });
+    }
+
+    function renderStatsCards() {
+      const config = window.elementSdk.config;
+      const totalResources = allResources.length;
+      const myResources = allResources.filter(r => r.uploaderEmail === currentUser.email).length;
+      const totalViews = allResources.reduce((sum, r) => sum + (r.viewCount || 0), 0);
+      const recentUploads = allResources.filter(r => {
+        const uploadDate = new Date(r.uploadDate);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return uploadDate >= weekAgo;
+      }).length;
+
+      const stats = [
+        { icon: '📚', label: 'Total Resources', value: totalResources, color: config.primary_color || defaultConfig.primary_color },
+        { icon: '📝', label: 'My Uploads', value: myResources, color: config.accent_color || defaultConfig.accent_color },
+        { icon: '👁️', label: 'Total Views', value: totalViews, color: '#8b5cf6' },
+        { icon: '🆕', label: 'This Week', value: recentUploads, color: '#f59e0b' }
+      ];
+
+      return stats.map(stat => `
+        <div class="rounded-xl shadow-lg p-6 card-hover fade-in" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-3xl">${stat.icon}</div>
+            <div class="px-3 py-1 rounded-full text-xs font-bold text-white" style="background-color: ${stat.color};">
+              ${stat.value}
+            </div>
+          </div>
+          <p class="text-sm font-medium opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">${stat.label}</p>
+        </div>
+      `).join('');
+    }
+
+    function renderResourceCard(resource) {
+      const config = window.elementSdk.config;
+      const fileTypeIcons = {
+        pdf: { icon: '📄', bg: '#ef4444' },
+        ppt: { icon: '📊', bg: '#f97316' },
+        doc: { icon: '📝', bg: '#3b82f6' },
+        image: { icon: '🖼️', bg: '#10b981' }
+      };
+
+      const typeInfo = fileTypeIcons[resource.fileType] || { icon: '📎', bg: '#6b7280' };
+      const isOwner = resource.uploaderEmail === currentUser.email;
+
+      return `
+        <div id="resource-${resource.id}" class="rounded-xl shadow-lg overflow-hidden card-hover cursor-pointer fade-in" 
+          style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center justify-center w-12 h-12 rounded-xl" style="background-color: ${typeInfo.bg}; color: white; font-size: 24px;">
+                ${typeInfo.icon}
+              </div>
+              ${isOwner ? `
+                <button id="delete-${resource.id}" class="px-3 py-1 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+                  style="background-color: #fee2e2; color: #991b1b;">
+                  🗑️
+                </button>
+              ` : ''}
+            </div>
+
+            <h3 class="font-bold text-lg mb-2 line-clamp-2" style="color: ${config.text_color || defaultConfig.text_color};">
+              ${resource.filename}
+            </h3>
+
+            ${resource.description ? `
+              <p class="text-sm opacity-80 mb-3 line-clamp-2" style="color: ${config.text_color || defaultConfig.text_color};">
+                ${resource.description}
+              </p>
+            ` : ''}
+
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="px-2 py-1 rounded-full text-xs font-medium" 
+                style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                ${resource.subject}
+              </span>
+              <span class="px-2 py-1 rounded-full text-xs font-medium"
+                style="background-color: ${config.accent_color || defaultConfig.accent_color}20; color: ${config.accent_color || defaultConfig.accent_color};">
+                ${resource.gradeLevel}
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between text-sm mb-3" style="color: ${config.text_color || defaultConfig.text_color};">
+              <div class="flex items-center gap-2">
+                <span>${resource.uploaderRole === 'teacher' ? '👨‍🏫' : '🎓'}</span>
+                <span class="opacity-70 truncate">${resource.uploaderName}</span>
+              </div>
+              <div class="flex items-center gap-1 opacity-70">
+                <span>👁️</span>
+                <span>${resource.viewCount || 0}</span>
+              </div>
+            </div>
+
+            ${resource.fileUrl ? `
+              <a href="${resource.fileUrl}" target="_blank" rel="noopener noreferrer" 
+                class="block w-full py-2 rounded-lg text-center text-sm font-medium mb-2 transition-all hover:opacity-80"
+                style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};"
+                onclick="event.stopPropagation();">
+                ⬇️ Download File
+              </a>
+            ` : ''}
+
+            <div class="pt-3 border-t flex items-center justify-between text-xs opacity-70"
+              style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+              <span>📅 ${new Date(resource.uploadDate).toLocaleDateString()}</span>
+              <span>💾 ${formatFileSize(resource.fileSize)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function showUploadModal(event, type) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
+
+      const config = window.elementSdk.config;
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop';
+      modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      
+      modal.innerHTML = `
+        <div class="rounded-2xl shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto fade-in" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+          <h3 class="text-2xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+            📤 Upload Resource Details
+          </h3>
+          <form id="upload-details-form">
+            <div class="space-y-4 mb-6">
+              ${files.map((file, idx) => `
+                <div class="p-4 rounded-lg" style="background-color: ${config.primary_color || defaultConfig.primary_color}10;">
+                  <div class="flex items-center gap-3 mb-3">
+                    <span class="text-2xl">${type === 'ppt' ? '📊' : '📝'}</span>
+                    <div class="flex-1">
+                      <p class="font-semibold text-sm" style="color: ${config.text_color || defaultConfig.text_color};">
+                        ${file.name}
+                      </p>
+                      <p class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                        ${formatFileSize(file.size)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-sm font-medium mb-1" style="color: ${config.text_color || defaultConfig.text_color};">
+                        Subject *
+                      </label>
+                      <select class="file-subject w-full px-3 py-2 rounded-lg border-2 focus:outline-none" data-index="${idx}"
+                        style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                        ${subjects.map(s => `<option value="${s}">${s}</option>`).join('')}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium mb-1" style="color: ${config.text_color || defaultConfig.text_color};">
+                        Grade Level *
+                      </label>
+                      <select class="file-grade w-full px-3 py-2 rounded-lg border-2 focus:outline-none" data-index="${idx}"
+                        style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};">
+                        ${gradeLevels.map(g => `<option value="${g}">${g}</option>`).join('')}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium mb-1" style="color: ${config.text_color || defaultConfig.text_color};">
+                        Description
+                      </label>
+                      <textarea class="file-description w-full px-3 py-2 rounded-lg border-2 focus:outline-none resize-none" 
+                        data-index="${idx}" rows="3" placeholder="Add a description for this resource..."
+                        style="border-color: rgba(0, 0, 0, 0.1); color: ${config.text_color || defaultConfig.text_color};"></textarea>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            
+            <div class="flex gap-3">
+              <button type="button" id="cancel-upload" class="flex-1 px-4 py-3 rounded-lg font-medium transition-all"
+                style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                Cancel
+              </button>
+              <button type="submit" id="confirm-upload" class="flex-1 px-4 py-3 rounded-lg font-medium text-white transition-all"
+                style="background-color: ${config.primary_color || defaultConfig.primary_color};">
+                <span id="upload-modal-text">Upload ${files.length} File(s)</span>
+                <div id="upload-modal-spinner" class="loading-spinner mx-auto hidden"></div>
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      document.getElementById('cancel-upload').addEventListener('click', () => {
+        modal.remove();
+        event.target.value = '';
+      });
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+          event.target.value = '';
+        }
+      });
+
+      document.getElementById('upload-details-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const fileDetails = files.map((file, idx) => ({
+          file,
+          subject: document.querySelector(`.file-subject[data-index="${idx}"]`).value,
+          gradeLevel: document.querySelector(`.file-grade[data-index="${idx}"]`).value,
+          description: document.querySelector(`.file-description[data-index="${idx}"]`).value.trim()
+        }));
+
+        modal.remove();
+        await handleFileUpload(fileDetails);
+        event.target.value = '';
+      });
+    }
+
+    async function handleFileUpload(fileDetails) {
+      if (fileDetails.length === 0) return;
+
+      if (allResources.length + fileDetails.length > 999) {
+        showToast('Cannot upload: Storage limit of 999 items would be exceeded', 'error');
+        return;
+      }
+
+      const maxSize = 10 * 1024 * 1024;
+      const oversizedFiles = fileDetails.filter(fd => fd.file.size > maxSize);
+      if (oversizedFiles.length > 0) {
+        showToast('Some files exceed 10MB limit', 'error');
+        return;
+      }
+
+      const duplicates = fileDetails.filter(fd => 
+        allResources.some(r => r.filename.toLowerCase() === fd.file.name.toLowerCase())
+      );
+      if (duplicates.length > 0) {
+        showToast(`File already exists: ${duplicates[0].file.name}`, 'error');
+        return;
+      }
+
+      const uploadStatus = document.getElementById('upload-status');
+      const uploadProgressBar = document.getElementById('upload-progress-bar');
+      const uploadText = document.getElementById('upload-text');
+      
+      if (uploadStatus) uploadStatus.classList.remove('hidden');
+
+      for (let i = 0; i < fileDetails.length; i++) {
+        const { file, subject, gradeLevel, description } = fileDetails[i];
+        if (uploadText) uploadText.textContent = `Uploading ${i + 1} of ${fileDetails.length}: ${file.name}`;
+        if (uploadProgressBar) uploadProgressBar.style.width = '20%';
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+          if (uploadProgressBar) uploadProgressBar.style.width = '50%';
+          
+          const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) throw new Error('Upload failed');
+
+          const data = await response.json();
+          if (uploadProgressBar) uploadProgressBar.style.width = '75%';
+
+          const fileType = getFileType(file.name);
+          const resource = {
+            id: generateId(),
+            filename: file.name,
+            fileType: fileType,
+            fileUrl: data.secure_url,
+            thumbnailUrl: data.thumbnail_url || data.secure_url,
+            subject: subject,
+            gradeLevel: gradeLevel,
+            description: description,
+            uploaderName: currentUser.name,
+            uploaderEmail: currentUser.email,
+            uploaderRole: currentUser.role,
+            uploadDate: new Date().toISOString(),
+            fileSize: file.size,
+            viewCount: 0,
+            slideCount: fileType === 'ppt' ? Math.floor(Math.random() * 30) + 10 : 0,
+            isPinned: false
+          };
+
+          const result = await window.dataSdk.create(resource);
+          if (uploadProgressBar) uploadProgressBar.style.width = '100%';
+
+          if (!result.isOk) {
+            showToast(`Failed to save ${file.name}`, 'error');
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          showToast(`Failed to upload ${file.name}`, 'error');
+        }
+      }
+
+      if (uploadStatus) uploadStatus.classList.add('hidden');
+      if (uploadProgressBar) uploadProgressBar.style.width = '0%';
+      showToast(`${fileDetails.length} file(s) uploaded successfully!`);
+    }
+
+    function showDeleteConfirmation(resource) {
+      const config = window.elementSdk.config;
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop';
+      modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      
+      modal.innerHTML = `
+        <div class="rounded-2xl shadow-2xl p-6 max-w-md w-full fade-in" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+          <div class="text-center mb-6">
+            <div class="text-5xl mb-4">⚠️</div>
+            <h3 class="text-xl font-bold mb-2" style="color: ${config.text_color || defaultConfig.text_color};">Delete Resource?</h3>
+            <p class="text-sm opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+              Are you sure you want to delete "${resource.filename}"? This action cannot be undone.
+            </p>
+          </div>
+          <div class="flex gap-3">
+            <button id="cancel-delete" class="flex-1 px-4 py-3 rounded-lg font-medium transition-all"
+              style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+              Cancel
+            </button>
+            <button id="confirm-delete" class="flex-1 px-4 py-3 rounded-lg font-medium text-white transition-all hover:opacity-80"
+              style="background-color: #ef4444;">
+              <span id="delete-text">Delete</span>
+              <div id="delete-spinner" class="loading-spinner mx-auto hidden"></div>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      document.getElementById('cancel-delete').addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+
+      document.getElementById('confirm-delete').addEventListener('click', async () => {
+        const deleteBtn = document.getElementById('confirm-delete');
+        const deleteText = document.getElementById('delete-text');
+        const deleteSpinner = document.getElementById('delete-spinner');
+        
+        deleteBtn.disabled = true;
+        deleteText.classList.add('hidden');
+        deleteSpinner.classList.remove('hidden');
+
+        const result = await window.dataSdk.delete(resource);
+        
+        if (result.isOk) {
+          showToast('Resource deleted successfully');
+          modal.remove();
+        } else {
+          showToast('Failed to delete resource', 'error');
+          deleteBtn.disabled = false;
+          deleteText.classList.remove('hidden');
+          deleteSpinner.classList.add('hidden');
+        }
+      });
+    }
+
+    function openViewer(resource) {
+      currentViewerResource = resource;
+      currentView = 'viewer';
+      
+      const updatedResource = { ...resource, viewCount: (resource.viewCount || 0) + 1 };
+      window.dataSdk.update(updatedResource);
+      
+      renderViewer();
+    }
+
+    function renderViewer() {
+      const config = window.elementSdk.config;
+      const app = document.getElementById('app');
+      const resource = currentViewerResource;
+
+      app.innerHTML = `
+        <div class="w-full h-full flex flex-col" style="background-color: ${config.background_color || defaultConfig.background_color};">
+          <header class="shadow-sm flex-shrink-0" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+            <div class="px-4 py-3 flex items-center justify-between">
+              <button id="close-viewer" class="px-4 py-2 rounded-lg font-medium transition-all"
+                style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                ← Back
+              </button>
+              <div class="flex-1 text-center px-4">
+                <h2 class="font-bold text-sm sm:text-lg truncate" style="color: ${config.text_color || defaultConfig.text_color};">
+                  ${resource.filename}
+                </h2>
+                <p class="text-xs opacity-70" style="color: ${config.text_color || defaultConfig.text_color};">
+                  👁️ ${resource.viewCount || 0} views
+                </p>
+              </div>
+              ${resource.fileUrl ? `
+                <a href="${resource.fileUrl}" target="_blank" rel="noopener noreferrer"
+                  class="px-4 py-2 rounded-lg font-medium transition-all"
+                  style="background-color: ${config.accent_color || defaultConfig.accent_color}; color: white;">
+                  ⬇️ Download
+                </a>
+              ` : '<div></div>'}
+            </div>
+          </header>
+
+          <div class="flex-1 overflow-y-auto">
+            <div class="max-w-7xl mx-auto p-4 sm:p-8">
+              <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background-color: ${config.secondary_color || defaultConfig.secondary_color};">
+                
+                ${resource.fileType === 'ppt' && resource.fileUrl ? `
+                  <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                      <div>
+                        <h3 class="text-2xl font-bold mb-2" style="color: ${config.text_color || defaultConfig.text_color};">
+                          📊 ${resource.subject}
+                        </h3>
+                        <div class="flex items-center gap-3 flex-wrap">
+                          <span class="px-3 py-1 rounded-full text-sm font-medium" style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">
+                            ${resource.gradeLevel}
+                          </span>
+                          <span class="px-3 py-1 rounded-full text-sm font-medium" style="background-color: ${config.accent_color || defaultConfig.accent_color}20; color: ${config.accent_color || defaultConfig.accent_color};">
+                            ${resource.slideCount || 'Multiple'} Slides
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    ${resource.description ? `
+                      <div class="p-4 rounded-lg mb-4" style="background-color: ${config.primary_color || defaultConfig.primary_color}10;">
+                        <p class="text-sm font-medium mb-1" style="color: ${config.text_color || defaultConfig.text_color};">📝 Description:</p>
+                        <p class="text-sm opacity-90" style="color: ${config.text_color || defaultConfig.text_color};">${resource.description}</p>
+                      </div>
+                    ` : ''}
+
+                    <div class="rounded-xl overflow-hidden shadow-2xl mb-4" style="background: #2b2b2b;">
+                      <iframe 
+                        class="ppt-viewer-iframe"
+                        src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resource.fileUrl)}"
+                        frameborder="0"
+                        allowfullscreen="true">
+                      </iframe>
+                    </div>
+                    <p class="text-center text-sm opacity-70 mb-6" style="color: ${config.text_color || defaultConfig.text_color};">
+                      💡 Navigate through ALL slides using the arrow controls • Click fullscreen for better viewing
+                    </p>
+                  </div>
+                
+                ` : resource.fileType === 'pdf' && resource.fileUrl ? `
+                  <div class="mb-6">
+                    <h3 class="text-2xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+                      📄 ${resource.filename}
+                    </h3>
+                    <div class="flex gap-2 mb-4">
+                      <span class="px-3 py-1 rounded-full text-sm" style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">${resource.subject}</span>
+                      <span class="px-3 py-1 rounded-full text-sm" style="background-color: ${config.accent_color || defaultConfig.accent_color}20; color: ${config.accent_color || defaultConfig.accent_color};">${resource.gradeLevel}</span>
+                    </div>
+                    ${resource.description ? `<div class="p-4 rounded-lg mb-4" style="background-color: ${config.primary_color || defaultConfig.primary_color}10;"><p class="text-sm" style="color: ${config.text_color || defaultConfig.text_color};">📝 ${resource.description}</p></div>` : ''}
+                    <div class="rounded-xl overflow-hidden" style="background: #f0f0f0; height: 700px;">
+                      <iframe src="${resource.fileUrl}" class="w-full h-full" frameborder="0"></iframe>
+                    </div>
+                  </div>
+                
+                ` : resource.fileType === 'image' && resource.fileUrl ? `
+                  <div class="mb-6 text-center">
+                    <h3 class="text-2xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">
+                      🖼️ ${resource.filename}
+                    </h3>
+                    <div class="flex gap-2 justify-center mb-4">
+                      <span class="px-3 py-1 rounded-full text-sm" style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};">${resource.subject}</span>
+                      <span class="px-3 py-1 rounded-full text-sm" style="background-color: ${config.accent_color || defaultConfig.accent_color}20; color: ${config.accent_color || defaultConfig.accent_color};">${resource.gradeLevel}</span>
+                    </div>
+                    ${resource.description ? `<div class="p-4 rounded-lg mb-4 text-left" style="background-color: ${config.primary_color || defaultConfig.primary_color}10;"><p class="text-sm" style="color: ${config.text_color || defaultConfig.text_color};">📝 ${resource.description}</p></div>` : ''}
+                    <img src="${resource.fileUrl}" alt="${resource.filename}" class="max-w-full max-h-[700px] mx-auto rounded-lg shadow-lg">
+                  </div>
+                
+                ` : `
+                  <div class="text-center mb-6">
+                    <div class="text-8xl mb-6">${getFileIcon(resource.fileType)}</div>
+                    <h3 class="text-3xl font-bold mb-4" style="color: ${config.text_color || defaultConfig.text_color};">${resource.filename}</h3>
+                    <div class="flex gap-3 justify-center mb-4">
+                      <span class="px-4 py-2 rounded-lg" style="background-color: ${config.primary_color || defaultConfig.primary_color}20; color: ${config.primary_color || defaultConfig.primary_color};"><strong>Subject:</strong> ${resource.subject}</span>
+                      <span class="px-4 py-2 rounded-lg" style="background-color: ${config.accent_color || defaultConfig.accent_color}20; color: ${config.accent_color || defaultConfig.accent_color};"><strong>Grade:</strong> ${resource.gradeLevel}</span>
+                    </div>
+                    ${resource.description ? `<div class="p-4 rounded-lg mb-4" style="background-color: ${config.primary_color || defaultConfig.primary_color}10;"><p class="text-sm" style="color: ${config.text_color || defaultConfig.text_color};">📝 ${resource.description}</p></div>` : ''}
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('close-viewer').addEventListener('click', () => {
+        currentView = 'dashboard';
+        currentViewerResource = null;
+        renderCurrentView();
+      });
+    }
+
+    function getFileIcon(fileType) {
+      const icons = {
+        pdf: '📄',
+        ppt: '📊',
+        doc: '📝',
+        image: '🖼️'
+      };
+      return icons[fileType] || '📎';
+    }
+
+    function applyFilters() {
+      filteredResources = allResources.filter(resource => {
+        const matchesSearch = !filters.search || 
+          resource.filename.toLowerCase().includes(filters.search.toLowerCase()) ||
+          resource.subject.toLowerCase().includes(filters.search.toLowerCase()) ||
+          resource.uploaderName.toLowerCase().includes(filters.search.toLowerCase());
+        
+        const matchesSubject = filters.subject === 'all' || resource.subject === filters.subject;
+        const matchesGrade = filters.gradeLevel === 'all' || resource.gradeLevel === filters.gradeLevel;
+        const matchesType = filters.fileType === 'all' || resource.fileType === filters.fileType;
+
+        return matchesSearch && matchesSubject && matchesGrade && matchesType;
+      });
+    }
+
+    async function handleLogout() {
+      try {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('lastLoginEmail');
+        
+        await auth.signOut();
+        showToast('Logged out successfully');
+      } catch (error) {
+        console.error('Logout error:', error);
+        showToast('Logout failed', 'error');
+      }
+    }
+
+    function getFileType(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      if (ext === 'pdf') return 'pdf';
+      if (['ppt', 'pptx'].includes(ext)) return 'ppt';
+      if (['doc', 'docx'].includes(ext)) return 'doc';
+      if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'image';
+      return 'other';
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    initializeApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a41d1351249fdac',t:'MTc2NDA4MDc0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
