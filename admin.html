@@ -1,0 +1,1334 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CVSU LMS - Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --cvsu-green: #1e7e34;
+      --cvsu-green-light: #28a745;
+      --cvsu-green-dark: #155724;
+    }
+    
+    .bg-cvsu-green { background-color: var(--cvsu-green); }
+    .bg-cvsu-green-light { background-color: var(--cvsu-green-light); }
+    .bg-cvsu-green-dark { background-color: var(--cvsu-green-dark); }
+    .text-cvsu-green { color: var(--cvsu-green); }
+    .border-cvsu-green { border-color: var(--cvsu-green); }
+    
+    .hover-cvsu:hover {
+      background-color: var(--cvsu-green-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .modal-backdrop {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    #toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+    }
+    
+    .toast {
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      animation: slideIn 0.3s ease-out;
+      min-width: 250px;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .toast-success { background-color: #10b981; color: white; }
+    .toast-error { background-color: #ef4444; color: white; }
+    .toast-info { background-color: #3b82f6; color: white; }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="bg-gray-50">
+  <div id="toast-container"></div><!-- Admin Login Page -->
+  <div id="adminLoginPage" class="min-h-full flex items-center justify-center py-12 px-4">
+   <div class="max-w-md w-full">
+    <div class="text-center mb-8">
+     <div class="w-20 h-20 bg-cvsu-green rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+     </div>
+     <h1 class="text-4xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+     <p class="text-gray-600">CVSU Learning Management System</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-xl p-8">
+     <form id="adminLoginForm" class="space-y-4">
+      <div><label for="adminPassword" class="block text-sm font-semibold text-gray-700 mb-2">Admin Password</label> <input type="password" id="adminPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent" placeholder="Enter admin password">
+      </div><button type="submit" class="w-full bg-cvsu-green text-white py-3 rounded-lg font-semibold hover-cvsu transition"> Access Admin Panel </button>
+     </form>
+    </div>
+   </div>
+  </div><!-- Admin Dashboard -->
+  <div id="adminDashboard" class="hidden"><!-- Navigation -->
+   <nav class="bg-cvsu-green text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4">
+     <div class="flex items-center justify-between h-16">
+      <div class="flex items-center gap-3">
+       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+       </svg><span class="text-xl font-bold">CVSU Admin Panel</span>
+      </div><button id="adminLogoutBtn" class="hover:bg-cvsu-green-dark px-4 py-2 rounded-lg transition font-semibold"> Logout </button>
+     </div>
+    </div>
+   </nav>
+   <div class="flex"><!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg min-h-[calc(100vh-4rem)]">
+     <nav class="p-4 space-y-2"><a href="#" data-page="overview" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg bg-cvsu-green text-white">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+       </svg><span class="font-semibold">Overview</span> </a> <a href="#" data-page="announcements" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+       </svg><span class="font-semibold">Announcements</span> </a> <a href="#" data-page="classes" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+       </svg><span class="font-semibold">Classes</span> </a> <a href="#" data-page="assignments" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+       </svg><span class="font-semibold">Assignments</span> </a>
+     </nav>
+    </aside><!-- Main Content -->
+    <main id="adminContent" class="flex-1 p-8"><!-- Content will be loaded here -->
+    </main>
+   </div>
+  </div>
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDcqcitLdyRytuUQTjJTmWgupL69OYFFOM",
+      authDomain: "rtdb-supabase.firebaseapp.com",
+      databaseURL: "https://rtdb-supabase-default-rtdb.firebaseio.com",
+      projectId: "rtdb-supabase",
+      storageBucket: "rtdb-supabase.firebasestorage.app",
+      messagingSenderId: "942223024342",
+      appId: "1:942223024342:web:98c97e0d2d7c6299ab2977",
+      measurementId: "G-WZPR57DDMF"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const storage = firebase.storage();
+
+    const ADMIN_PASSWORD = "Athanmeir@1";
+    let allAnnouncements = [];
+    let allClasses = [];
+    let allAssignments = [];
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Admin login
+    document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const password = document.getElementById('adminPassword').value;
+      
+      if (password === ADMIN_PASSWORD) {
+        document.getElementById('adminLoginPage').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.remove('hidden');
+        showToast('Welcome to Admin Panel', 'success');
+        loadAllData();
+        loadPage('overview');
+      } else {
+        showToast('Incorrect password', 'error');
+        document.getElementById('adminPassword').value = '';
+      }
+    });
+
+    // Admin logout
+    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+      document.getElementById('adminDashboard').classList.add('hidden');
+      document.getElementById('adminLoginPage').classList.remove('hidden');
+      document.getElementById('adminPassword').value = '';
+      showToast('Logged out', 'info');
+    });
+
+    // Navigation
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = link.getAttribute('data-page');
+        loadPage(page);
+        
+        document.querySelectorAll('.nav-link').forEach(l => {
+          l.classList.remove('bg-cvsu-green', 'text-white');
+          l.classList.add('text-gray-700');
+        });
+        link.classList.add('bg-cvsu-green', 'text-white');
+        link.classList.remove('text-gray-700');
+      });
+    });
+
+    // Load all data from Firebase
+    async function loadAllData() {
+      try {
+        showToast('Loading data...', 'info');
+
+        // Load announcements
+        const announcementsSnapshot = await database.ref('announcements').once('value');
+        if (announcementsSnapshot.exists()) {
+          allAnnouncements = Object.entries(announcementsSnapshot.val()).map(([id, data]) => ({
+            id,
+            ...data
+          }));
+        } else {
+          allAnnouncements = [];
+        }
+
+        // Load classes
+        const classesSnapshot = await database.ref('classes').once('value');
+        if (classesSnapshot.exists()) {
+          allClasses = Object.entries(classesSnapshot.val()).map(([id, data]) => ({
+            id,
+            ...data
+          }));
+        } else {
+          allClasses = [];
+        }
+
+        // Load assignments
+        const assignmentsSnapshot = await database.ref('assignments').once('value');
+        if (assignmentsSnapshot.exists()) {
+          allAssignments = Object.entries(assignmentsSnapshot.val()).map(([id, data]) => ({
+            id,
+            ...data
+          }));
+        } else {
+          allAssignments = [];
+        }
+
+        showToast('Data loaded successfully', 'success');
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showToast('Failed to load data: ' + error.message, 'error');
+      }
+    }
+
+    // Load page content
+    function loadPage(page) {
+      const content = document.getElementById('adminContent');
+      
+      switch(page) {
+        case 'overview':
+          content.innerHTML = getOverviewContent();
+          break;
+        case 'announcements':
+          content.innerHTML = getAnnouncementsContent();
+          attachAnnouncementListeners();
+          break;
+        case 'classes':
+          content.innerHTML = getClassesContent();
+          attachClassListeners();
+          break;
+        case 'assignments':
+          content.innerHTML = getAssignmentsContent();
+          attachAssignmentListeners();
+          break;
+        case 'resources':
+          content.innerHTML = getResourcesContent();
+          attachResourceListeners();
+          break;
+        case 'badges':
+          content.innerHTML = getBadgesContent();
+          attachBadgeListeners();
+          break;
+        default:
+          content.innerHTML = getOverviewContent();
+      }
+    }
+
+    // Overview Page
+    function getOverviewContent() {
+      return `
+        <div class="fade-in">
+          <h2 class="text-3xl font-bold text-gray-800 mb-6">Admin Overview</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-500 text-sm font-semibold">Announcements</p>
+                  <p class="text-3xl font-bold text-gray-800 mt-2">${allAnnouncements.length}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-500 text-sm font-semibold">Classes</p>
+                  <p class="text-3xl font-bold text-gray-800 mt-2">${allClasses.length}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-gray-500 text-sm font-semibold">Assignments</p>
+                  <p class="text-3xl font-bold text-gray-800 mt-2">${allAssignments.length}</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <button onclick="loadPage('announcements')" class="bg-white rounded-lg shadow p-8 text-center card-hover">
+              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">Manage Announcements</h3>
+              <p class="text-gray-600">Create and manage system announcements</p>
+            </button>
+
+            <button onclick="loadPage('classes')" class="bg-white rounded-lg shadow p-8 text-center card-hover">
+              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">Manage Classes</h3>
+              <p class="text-gray-600">Create and manage classes</p>
+            </button>
+
+            <button onclick="loadPage('assignments')" class="bg-white rounded-lg shadow p-8 text-center card-hover">
+              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">Manage Assignments</h3>
+              <p class="text-gray-600">Create and manage assignments</p>
+            </button>
+
+            <button onclick="loadAllData()" class="bg-white rounded-lg shadow p-8 text-center card-hover">
+              <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">Refresh Data</h3>
+              <p class="text-gray-600">Reload all data from database</p>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Announcements Page
+    function getAnnouncementsContent() {
+      return `
+        <div class="fade-in">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-3xl font-bold text-gray-800">Manage Announcements</h2>
+            <button id="createAnnouncementBtn" class="bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+              + Create Announcement
+            </button>
+          </div>
+
+          ${allAnnouncements.length === 0 ? `
+            <div class="bg-white rounded-lg shadow p-12 text-center">
+              <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+              </svg>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">No Announcements Yet</h3>
+              <p class="text-gray-600">Create your first announcement to get started</p>
+            </div>
+          ` : `
+            <div class="space-y-4">
+              ${allAnnouncements.sort((a, b) => (b.date || 0) - (a.date || 0)).map(announcement => `
+                <div class="bg-white rounded-lg shadow p-6 ${announcement.pinned ? 'border-2 border-cvsu-green' : ''}">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-3 mb-2">
+                        ${announcement.pinned ? `
+                          <svg class="w-5 h-5 text-cvsu-green" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L11 4.323V3a1 1 0 011-1h-2zM5.5 9A1.5 1.5 0 104 7.5 1.5 1.5 0 005.5 9z"/>
+                          </svg>
+                        ` : ''}
+                        <span class="badge bg-${getCategoryColor(announcement.category)}-100 text-${getCategoryColor(announcement.category)}-700">${announcement.category || 'General'}</span>
+                        <span class="text-sm text-gray-500">${getTimeAgo(announcement.date)}</span>
+                      </div>
+                      <h4 class="font-bold text-gray-800 text-lg mb-2">${announcement.title}</h4>
+                      <p class="text-gray-600 mb-2">${announcement.content}</p>
+                      <p class="text-sm text-gray-500">By ${announcement.author || 'Admin'}</p>
+                    </div>
+                    <div class="flex gap-2 ml-4">
+                      <button onclick="editAnnouncement('${announcement.id}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      </button>
+                      <button onclick="deleteAnnouncement('${announcement.id}')" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function attachAnnouncementListeners() {
+      const createBtn = document.getElementById('createAnnouncementBtn');
+      if (createBtn) {
+        createBtn.addEventListener('click', showCreateAnnouncementModal);
+      }
+    }
+
+    // Create Announcement Modal
+    function showCreateAnnouncementModal() {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 fade-in max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-cvsu-green">Create Announcement</h2>
+            <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <form id="announcementForm" class="space-y-6">
+            <div>
+              <label for="announcementTitle" class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+              <input type="text" id="announcementTitle" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="announcementContent" class="block text-sm font-semibold text-gray-700 mb-2">Content</label>
+              <textarea id="announcementContent" rows="6" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent"></textarea>
+            </div>
+
+            <div>
+              <label for="announcementCategory" class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+              <select id="announcementCategory" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+                <option value="">Select category</option>
+                <option value="Important">Important</option>
+                <option value="Event">Event</option>
+                <option value="Update">Update</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="announcementPinned" class="w-5 h-5 text-cvsu-green border-gray-300 rounded focus:ring-cvsu-green">
+                <span class="text-sm font-semibold text-gray-700">Pin this announcement</span>
+              </label>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+              <button type="button" id="cancelBtn" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button type="submit" class="flex-1 bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+                Create
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('closeModal').addEventListener('click', () => modal.remove());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.remove());
+
+      document.getElementById('announcementForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('announcementTitle').value.trim();
+        const content = document.getElementById('announcementContent').value.trim();
+        const category = document.getElementById('announcementCategory').value;
+        const pinned = document.getElementById('announcementPinned').checked;
+
+        showToast('Creating announcement...', 'info');
+
+        try {
+          await database.ref('announcements').push({
+            title,
+            content,
+            category,
+            pinned,
+            author: 'Admin',
+            date: Date.now()
+          });
+
+          showToast('Announcement created!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('announcements');
+        } catch (error) {
+          showToast('Failed to create announcement', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    // Edit Announcement
+    async function editAnnouncement(id) {
+      const announcement = allAnnouncements.find(a => a.id === id);
+      if (!announcement) return;
+
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 fade-in max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-cvsu-green">Edit Announcement</h2>
+            <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <form id="editAnnouncementForm" class="space-y-6">
+            <div>
+              <label for="editTitle" class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+              <input type="text" id="editTitle" value="${announcement.title}" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="editContent" class="block text-sm font-semibold text-gray-700 mb-2">Content</label>
+              <textarea id="editContent" rows="6" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">${announcement.content}</textarea>
+            </div>
+
+            <div>
+              <label for="editCategory" class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+              <select id="editCategory" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+                <option value="Important" ${announcement.category === 'Important' ? 'selected' : ''}>Important</option>
+                <option value="Event" ${announcement.category === 'Event' ? 'selected' : ''}>Event</option>
+                <option value="Update" ${announcement.category === 'Update' ? 'selected' : ''}>Update</option>
+                <option value="General" ${announcement.category === 'General' ? 'selected' : ''}>General</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="editPinned" ${announcement.pinned ? 'checked' : ''} class="w-5 h-5 text-cvsu-green border-gray-300 rounded focus:ring-cvsu-green">
+                <span class="text-sm font-semibold text-gray-700">Pin this announcement</span>
+              </label>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+              <button type="button" id="cancelBtn" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button type="submit" class="flex-1 bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+                Update
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('closeModal').addEventListener('click', () => modal.remove());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.remove());
+
+      document.getElementById('editAnnouncementForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('editTitle').value.trim();
+        const content = document.getElementById('editContent').value.trim();
+        const category = document.getElementById('editCategory').value;
+        const pinned = document.getElementById('editPinned').checked;
+
+        showToast('Updating announcement...', 'info');
+
+        try {
+          await database.ref('announcements/' + id).update({
+            title,
+            content,
+            category,
+            pinned
+          });
+
+          showToast('Announcement updated!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('announcements');
+        } catch (error) {
+          showToast('Failed to update announcement', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    // Delete Announcement
+    async function deleteAnnouncement(id) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Confirm Deletion</h3>
+          <p class="text-gray-600 mb-6">Are you sure you want to delete this announcement? This action cannot be undone.</p>
+          <div class="flex gap-3">
+            <button id="cancelDelete" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition">
+              Cancel
+            </button>
+            <button id="confirmDelete" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('cancelDelete').addEventListener('click', () => modal.remove());
+      
+      document.getElementById('confirmDelete').addEventListener('click', async () => {
+        showToast('Deleting announcement...', 'info');
+        
+        try {
+          await database.ref('announcements/' + id).remove();
+          showToast('Announcement deleted!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('announcements');
+        } catch (error) {
+          showToast('Failed to delete announcement', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    // Classes Page (similar structure - abbreviated for brevity)
+    function getClassesContent() {
+      return `
+        <div class="fade-in">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-3xl font-bold text-gray-800">Manage Classes</h2>
+            <button id="createClassBtn" class="bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+              + Create Class
+            </button>
+          </div>
+
+          ${allClasses.length === 0 ? `
+            <div class="bg-white rounded-lg shadow p-12 text-center">
+              <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+              </svg>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">No Classes Yet</h3>
+              <p class="text-gray-600">Create your first class to get started</p>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${allClasses.map(cls => `
+                <div class="bg-white rounded-lg shadow overflow-hidden card-hover">
+                  <div class="h-32 bg-gradient-to-br from-cvsu-green to-cvsu-green-light"></div>
+                  <div class="p-5">
+                    <h4 class="font-bold text-gray-800 mb-2">${cls.name}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${cls.teacher || 'No teacher assigned'}</p>
+                    <div class="flex items-center gap-2 mb-3">
+                      <span class="badge bg-blue-100 text-blue-700">${cls.code}</span>
+                      <span class="text-sm text-gray-500">${cls.students || 0} students</span>
+                    </div>
+                    ${cls.schedule ? `<p class="text-sm text-gray-600 mb-3">📅 ${cls.schedule}</p>` : ''}
+                    <div class="flex gap-2">
+                      <button onclick="editClass('${cls.id}')" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 transition">
+                        Edit
+                      </button>
+                      <button onclick="deleteClass('${cls.id}')" class="flex-1 px-3 py-2 bg-red-600 text-white rounded text-sm font-semibold hover:bg-red-700 transition">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function attachClassListeners() {
+      const createBtn = document.getElementById('createClassBtn');
+      if (createBtn) {
+        createBtn.addEventListener('click', showCreateClassModal);
+      }
+    }
+
+    function showCreateClassModal() {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 fade-in max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-cvsu-green">Create New Class</h2>
+            <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <form id="classForm" class="space-y-6">
+            <div>
+              <label for="className" class="block text-sm font-semibold text-gray-700 mb-2">Class Name</label>
+              <input type="text" id="className" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="classCode" class="block text-sm font-semibold text-gray-700 mb-2">Class Code</label>
+              <input type="text" id="classCode" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="classDescription" class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+              <textarea id="classDescription" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent"></textarea>
+            </div>
+
+            <div>
+              <label for="classSchedule" class="block text-sm font-semibold text-gray-700 mb-2">Schedule</label>
+              <input type="text" id="classSchedule" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent" placeholder="e.g., MWF 10:00 AM - 11:30 AM">
+            </div>
+
+            <div>
+              <label for="classTeacher" class="block text-sm font-semibold text-gray-700 mb-2">Teacher</label>
+              <input type="text" id="classTeacher" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div class="flex gap-4 pt-4">
+              <button type="button" id="cancelBtn" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button type="submit" class="flex-1 bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+                Create
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('closeModal').addEventListener('click', () => modal.remove());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.remove());
+
+      document.getElementById('classForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('className').value.trim();
+        const code = document.getElementById('classCode').value.trim();
+        const description = document.getElementById('classDescription').value.trim();
+        const schedule = document.getElementById('classSchedule').value.trim();
+        const teacher = document.getElementById('classTeacher').value.trim();
+
+        showToast('Creating class...', 'info');
+
+        try {
+          await database.ref('classes').push({
+            name,
+            code,
+            description,
+            schedule,
+            teacher: teacher || 'Admin',
+            teacherId: 'admin',
+            students: 0,
+            createdDate: Date.now()
+          });
+
+          showToast('Class created!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('classes');
+        } catch (error) {
+          showToast('Failed to create class', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    async function editClass(id) {
+      const cls = allClasses.find(c => c.id === id);
+      if (!cls) return;
+
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 fade-in max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-cvsu-green">Edit Class</h2>
+            <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <form id="editClassForm" class="space-y-6">
+            <div>
+              <label for="editName" class="block text-sm font-semibold text-gray-700 mb-2">Class Name</label>
+              <input type="text" id="editName" value="${cls.name}" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="editCode" class="block text-sm font-semibold text-gray-700 mb-2">Class Code</label>
+              <input type="text" id="editCode" value="${cls.code}" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="editDescription" class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+              <textarea id="editDescription" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">${cls.description || ''}</textarea>
+            </div>
+
+            <div>
+              <label for="editSchedule" class="block text-sm font-semibold text-gray-700 mb-2">Schedule</label>
+              <input type="text" id="editSchedule" value="${cls.schedule || ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="editTeacher" class="block text-sm font-semibold text-gray-700 mb-2">Teacher</label>
+              <input type="text" id="editTeacher" value="${cls.teacher || ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div class="flex gap-4 pt-4">
+              <button type="button" id="cancelBtn" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button type="submit" class="flex-1 bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+                Update
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('closeModal').addEventListener('click', () => modal.remove());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.remove());
+
+      document.getElementById('editClassForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('editName').value.trim();
+        const code = document.getElementById('editCode').value.trim();
+        const description = document.getElementById('editDescription').value.trim();
+        const schedule = document.getElementById('editSchedule').value.trim();
+        const teacher = document.getElementById('editTeacher').value.trim();
+
+        showToast('Updating class...', 'info');
+
+        try {
+          await database.ref('classes/' + id).update({
+            name,
+            code,
+            description,
+            schedule,
+            teacher
+          });
+
+          showToast('Class updated!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('classes');
+        } catch (error) {
+          showToast('Failed to update class', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    async function deleteClass(id) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Confirm Deletion</h3>
+          <p class="text-gray-600 mb-6">Are you sure you want to delete this class? This action cannot be undone.</p>
+          <div class="flex gap-3">
+            <button id="cancelDelete" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition">
+              Cancel
+            </button>
+            <button id="confirmDelete" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('cancelDelete').addEventListener('click', () => modal.remove());
+      
+      document.getElementById('confirmDelete').addEventListener('click', async () => {
+        showToast('Deleting class...', 'info');
+        
+        try {
+          await database.ref('classes/' + id).remove();
+          showToast('Class deleted!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('classes');
+        } catch (error) {
+          showToast('Failed to delete class', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    // Assignments, Resources, and Badges pages follow similar patterns
+    // For brevity, I'll provide simplified versions
+
+    function getAssignmentsContent() {
+      return `
+        <div class="fade-in">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-3xl font-bold text-gray-800">Manage Assignments</h2>
+            <button id="createAssignmentBtn" class="bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+              + Create Assignment
+            </button>
+          </div>
+
+          ${allAssignments.length === 0 ? `
+            <div class="bg-white rounded-lg shadow p-12 text-center">
+              <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">No Assignments Yet</h3>
+              <p class="text-gray-600">Create your first assignment to get started</p>
+            </div>
+          ` : `
+            <div class="space-y-4">
+              ${allAssignments.sort((a, b) => (b.createdDate || 0) - (a.createdDate || 0)).map(assignment => `
+                <div class="bg-white rounded-lg shadow p-6">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-3 mb-2">
+                        <span class="badge bg-purple-100 text-purple-700">${assignment.className || 'No Class'}</span>
+                        ${assignment.dueDate ? `
+                          <span class="text-sm text-gray-500">📅 Due: ${new Date(assignment.dueDate).toLocaleDateString()}</span>
+                        ` : ''}
+                        ${assignment.points ? `
+                          <span class="text-sm text-gray-500">⭐ ${assignment.points} points</span>
+                        ` : ''}
+                      </div>
+                      <h4 class="font-bold text-gray-800 text-lg mb-2">${assignment.title}</h4>
+                      <p class="text-gray-600 mb-2">${assignment.description || 'No description'}</p>
+                      ${assignment.instructions ? `
+                        <p class="text-sm text-gray-500 mb-2">📝 ${assignment.instructions}</p>
+                      ` : ''}
+                      <div class="flex items-center gap-4 text-sm text-gray-500">
+                        <span>Type: ${assignment.type || 'Assignment'}</span>
+                        ${assignment.submissions ? `<span>📊 ${assignment.submissions} submissions</span>` : ''}
+                      </div>
+                    </div>
+                    <div class="flex gap-2 ml-4">
+                      <button onclick="editAssignment('${assignment.id}')" class="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      </button>
+                      <button onclick="deleteAssignment('${assignment.id}')" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    function attachAssignmentListeners() {
+      const createBtn = document.getElementById('createAssignmentBtn');
+      if (createBtn) {
+        createBtn.addEventListener('click', showCreateAssignmentModal);
+      }
+    }
+
+    function showCreateAssignmentModal() {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 fade-in max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-cvsu-green">Create Assignment</h2>
+            <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <form id="assignmentForm" class="space-y-6">
+            <div>
+              <label for="assignmentTitle" class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+              <input type="text" id="assignmentTitle" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="assignmentDescription" class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+              <textarea id="assignmentDescription" rows="4" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent"></textarea>
+            </div>
+
+            <div>
+              <label for="assignmentClass" class="block text-sm font-semibold text-gray-700 mb-2">Class</label>
+              <select id="assignmentClass" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+                <option value="">Select class</option>
+                ${allClasses.map(cls => `<option value="${cls.name}">${cls.name} (${cls.code})</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label for="assignmentType" class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+              <select id="assignmentType" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+                <option value="Assignment">Assignment</option>
+                <option value="Quiz">Quiz</option>
+                <option value="Exam">Exam</option>
+                <option value="Project">Project</option>
+                <option value="Discussion">Discussion</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="assignmentDueDate" class="block text-sm font-semibold text-gray-700 mb-2">Due Date</label>
+                <input type="datetime-local" id="assignmentDueDate" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+              </div>
+
+              <div>
+                <label for="assignmentPoints" class="block text-sm font-semibold text-gray-700 mb-2">Points</label>
+                <input type="number" id="assignmentPoints" min="0" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+              </div>
+            </div>
+
+            <div>
+              <label for="assignmentInstructions" class="block text-sm font-semibold text-gray-700 mb-2">Instructions</label>
+              <textarea id="assignmentInstructions" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent"></textarea>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+              <button type="button" id="cancelBtn" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button type="submit" class="flex-1 bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+                Create
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('closeModal').addEventListener('click', () => modal.remove());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.remove());
+
+      document.getElementById('assignmentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('assignmentTitle').value.trim();
+        const description = document.getElementById('assignmentDescription').value.trim();
+        const className = document.getElementById('assignmentClass').value;
+        const type = document.getElementById('assignmentType').value;
+        const dueDate = new Date(document.getElementById('assignmentDueDate').value).getTime();
+        const points = parseInt(document.getElementById('assignmentPoints').value);
+        const instructions = document.getElementById('assignmentInstructions').value.trim();
+
+        showToast('Creating assignment...', 'info');
+
+        try {
+          await database.ref('assignments').push({
+            title,
+            description,
+            className,
+            type,
+            dueDate,
+            points,
+            instructions,
+            submissions: 0,
+            createdDate: Date.now()
+          });
+
+          showToast('Assignment created!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('assignments');
+        } catch (error) {
+          showToast('Failed to create assignment', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    async function editAssignment(id) {
+      const assignment = allAssignments.find(a => a.id === id);
+      if (!assignment) return;
+
+      const dueDateValue = assignment.dueDate ? new Date(assignment.dueDate).toISOString().slice(0, 16) : '';
+
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 fade-in max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-cvsu-green">Edit Assignment</h2>
+            <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <form id="editAssignmentForm" class="space-y-6">
+            <div>
+              <label for="editTitle" class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+              <input type="text" id="editTitle" value="${assignment.title}" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+            </div>
+
+            <div>
+              <label for="editDescription" class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+              <textarea id="editDescription" rows="4" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">${assignment.description || ''}</textarea>
+            </div>
+
+            <div>
+              <label for="editClass" class="block text-sm font-semibold text-gray-700 mb-2">Class</label>
+              <select id="editClass" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+                <option value="">Select class</option>
+                ${allClasses.map(cls => `<option value="${cls.name}" ${cls.name === assignment.className ? 'selected' : ''}>${cls.name} (${cls.code})</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label for="editType" class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+              <select id="editType" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+                <option value="Assignment" ${assignment.type === 'Assignment' ? 'selected' : ''}>Assignment</option>
+                <option value="Quiz" ${assignment.type === 'Quiz' ? 'selected' : ''}>Quiz</option>
+                <option value="Exam" ${assignment.type === 'Exam' ? 'selected' : ''}>Exam</option>
+                <option value="Project" ${assignment.type === 'Project' ? 'selected' : ''}>Project</option>
+                <option value="Discussion" ${assignment.type === 'Discussion' ? 'selected' : ''}>Discussion</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="editDueDate" class="block text-sm font-semibold text-gray-700 mb-2">Due Date</label>
+                <input type="datetime-local" id="editDueDate" value="${dueDateValue}" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+              </div>
+
+              <div>
+                <label for="editPoints" class="block text-sm font-semibold text-gray-700 mb-2">Points</label>
+                <input type="number" id="editPoints" value="${assignment.points || 0}" min="0" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">
+              </div>
+            </div>
+
+            <div>
+              <label for="editInstructions" class="block text-sm font-semibold text-gray-700 mb-2">Instructions</label>
+              <textarea id="editInstructions" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cvsu-green focus:border-transparent">${assignment.instructions || ''}</textarea>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+              <button type="button" id="cancelBtn" class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button type="submit" class="flex-1 bg-cvsu-green text-white px-6 py-3 rounded-lg font-semibold hover-cvsu transition">
+                Update
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('closeModal').addEventListener('click', () => modal.remove());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.remove());
+
+      document.getElementById('editAssignmentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('editTitle').value.trim();
+        const description = document.getElementById('editDescription').value.trim();
+        const className = document.getElementById('editClass').value;
+        const type = document.getElementById('editType').value;
+        const dueDate = new Date(document.getElementById('editDueDate').value).getTime();
+        const points = parseInt(document.getElementById('editPoints').value);
+        const instructions = document.getElementById('editInstructions').value.trim();
+
+        showToast('Updating assignment...', 'info');
+
+        try {
+          await database.ref('assignments/' + id).update({
+            title,
+            description,
+            className,
+            type,
+            dueDate,
+            points,
+            instructions
+          });
+
+          showToast('Assignment updated!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('assignments');
+        } catch (error) {
+          showToast('Failed to update assignment', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    async function deleteAssignment(id) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-2">Confirm Deletion</h3>
+          <p class="text-gray-600 mb-6">Are you sure you want to delete this assignment? This action cannot be undone.</p>
+          <div class="flex gap-3">
+            <button id="cancelDelete" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition">
+              Cancel
+            </button>
+            <button id="confirmDelete" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('cancelDelete').addEventListener('click', () => modal.remove());
+      
+      document.getElementById('confirmDelete').addEventListener('click', async () => {
+        showToast('Deleting assignment...', 'info');
+        
+        try {
+          await database.ref('assignments/' + id).remove();
+          showToast('Assignment deleted!', 'success');
+          modal.remove();
+          await loadAllData();
+          loadPage('assignments');
+        } catch (error) {
+          showToast('Failed to delete assignment', 'error');
+          console.error(error);
+        }
+      });
+    }
+
+    function getResourcesContent() {
+      return `<div class="fade-in"><h2 class="text-3xl font-bold text-gray-800 mb-6">Manage Resources</h2><p class="text-gray-600">Resource management coming soon...</p></div>`;
+    }
+
+    function attachResourceListeners() {}
+
+    function getBadgesContent() {
+      return `<div class="fade-in"><h2 class="text-3xl font-bold text-gray-800 mb-6">Manage Badges</h2><p class="text-gray-600">Badge management coming soon...</p></div>`;
+    }
+
+    function attachBadgeListeners() {}
+
+    // Helper functions
+    function getCategoryColor(category) {
+      const colors = {
+        'Important': 'red',
+        'Event': 'green',
+        'Update': 'blue',
+        'General': 'gray'
+      };
+      return colors[category] || 'gray';
+    }
+
+    function getTimeAgo(timestamp) {
+      if (!timestamp) return 'Unknown';
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      
+      if (seconds < 60) return 'Just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+      if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+      return new Date(timestamp).toLocaleDateString();
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a56dee0e668bc5b',t:'MTc2NDMwMTUwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
